@@ -1,0 +1,25 @@
+{
+  "name": "jira-mcp",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Servidor MCP genérico para o Jira Cloud (REST API v3 + Agile 1.0): issues, busca/relatórios, sprints, campos customizados e um escape hatch para qualquer endpoint.",
+  "type": "module",
+  "bin": {
+    "jira-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "smoke": "tsx src/smoke.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
