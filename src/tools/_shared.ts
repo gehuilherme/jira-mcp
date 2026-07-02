@@ -1,43 +1,43 @@
 /**
- * Helpers compartilhados pelos módulos de tools: formatação de resposta MCP,
- * escape de JQL e o guard de confirmação para operações destrutivas.
+ * Helpers shared across the tool modules: MCP response formatting,
+ * JQL escaping and the confirmation guard for destructive operations.
  *
- * Observação: o McpServer já captura exceções lançadas dentro de um handler e
- * as devolve como `{ isError: true }`. Por isso as tools podem simplesmente
- * lançar `JiraError` (ou qualquer Error) em vez de montar o erro na mão.
+ * Note: the McpServer already catches exceptions thrown inside a handler and
+ * returns them as `{ isError: true }`. That is why tools can simply throw
+ * `JiraError` (or any Error) instead of building the error by hand.
  */
 
 export interface ToolTextResult {
   content: { type: "text"; text: string }[];
   isError?: boolean;
-  // O SDK do MCP tipa o retorno com index signature; espelhamos para compat.
+  // The MCP SDK types the return with an index signature; we mirror it for compat.
   [key: string]: unknown;
 }
 
-/** Resposta de texto simples. */
+/** Plain text response. */
 export function textResult(text: string): ToolTextResult {
   return { content: [{ type: "text", text }] };
 }
 
-/** Resposta com um objeto serializado em JSON legível. */
+/** Response with an object serialized as readable JSON. */
 export function jsonResult(data: unknown): ToolTextResult {
   return textResult(JSON.stringify(data, null, 2));
 }
 
-/** Resposta de erro explícita (para validações de lógica da própria tool). */
+/** Explicit error response (for the tool's own logic validations). */
 export function errorResult(text: string): ToolTextResult {
   return { isError: true, content: [{ type: "text", text }] };
 }
 
-/** Escapa aspas duplas para uso dentro de string entre aspas no JQL. */
+/** Escapes double quotes for use inside a quoted string in JQL. */
 export function jqlQuote(value: string): string {
   return `"${value.replace(/"/g, '\\"')}"`;
 }
 
 /**
- * Guard de operação destrutiva. Se `confirm` não for `true`, devolve um
- * resultado de DRY-RUN descrevendo a ação (sem executar). Se `confirm` for
- * `true`, devolve `null` e o caller segue com a execução real.
+ * Destructive operation guard. If `confirm` is not `true`, it returns a
+ * DRY-RUN result describing the action (without executing). If `confirm` is
+ * `true`, it returns `null` and the caller proceeds with the real execution.
  */
 export function confirmGuard(
   confirm: boolean | undefined,
@@ -46,11 +46,11 @@ export function confirmGuard(
 ): ToolTextResult | null {
   if (confirm === true) return null;
   const body =
-    `DRY-RUN — nada foi executado.\n` +
-    `Ação pretendida: ${action}\n` +
-    `Passe \`confirm: true\` para executar de verdade.` +
+    `DRY-RUN — nothing was executed.\n` +
+    `Intended action: ${action}\n` +
+    `Pass \`confirm: true\` to actually execute.` +
     (details !== undefined
-      ? `\n\nDetalhes:\n${JSON.stringify(details, null, 2)}`
+      ? `\n\nDetails:\n${JSON.stringify(details, null, 2)}`
       : "");
   return textResult(body);
 }

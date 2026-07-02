@@ -10,22 +10,22 @@ export function registerSearch(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "search_issues",
     {
-      title: "Buscar issues por JQL",
+      title: "Search issues by JQL",
       description:
-        "Executa uma busca JQL livre com paginação real. Retorna as issues, o " +
-        "`nextPageToken` (passe-o de volta para a próxima página) e `isLast`. " +
-        "Ex de JQL: `project = PROJ AND status = \"In Progress\" ORDER BY updated DESC`.",
+        "Runs a free-form JQL search with real pagination. Returns the issues, the " +
+        "`nextPageToken` (pass it back for the next page) and `isLast`. " +
+        "JQL example: `project = PROJ AND status = \"In Progress\" ORDER BY updated DESC`.",
       inputSchema: {
-        jql: z.string().describe("Consulta JQL completa."),
+        jql: z.string().describe("Full JQL query."),
         fields: z
           .array(z.string())
           .optional()
-          .describe("Campos a retornar (nome ou id). Default: resumo/status/responsável/prioridade."),
+          .describe("Fields to return (name or id). Default: summary/status/assignee/priority."),
         maxResults: z.number().int().min(1).max(100).default(50),
         nextPageToken: z
           .string()
           .optional()
-          .describe("Token da página seguinte (retornado na chamada anterior)."),
+          .describe("Token for the next page (returned by the previous call)."),
         expand: z.array(z.string()).optional(),
       },
     },

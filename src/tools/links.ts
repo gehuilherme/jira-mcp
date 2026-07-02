@@ -8,10 +8,10 @@ export function registerLinks(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "list_link_types",
     {
-      title: "Listar tipos de link entre issues",
+      title: "List issue link types",
       description:
-        "Lista os tipos de vínculo disponíveis (id, nome e as descrições inward/" +
-        "outward, ex: 'blocks' / 'is blocked by'). Use antes de link_issues.",
+        "Lists the available link types (id, name, and the inward/outward " +
+        "descriptions, e.g. 'blocks' / 'is blocked by'). Use before link_issues.",
       inputSchema: {},
     },
     async () => {
@@ -30,16 +30,16 @@ export function registerLinks(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "link_issues",
     {
-      title: "Vincular duas issues (ESCRITA)",
+      title: "Link two issues (WRITE)",
       description:
-        "Cria um vínculo entre duas issues. `type` é o nome (ex: 'Blocks') ou id do " +
-        "tipo de link. Semântica: outward <type> inward (ex: outward 'blocks' inward). " +
-        "ESCRITA no Jira.",
+        "Creates a link between two issues. `type` is the name (e.g. 'Blocks') or id of " +
+        "the link type. Semantics: outward <type> inward (e.g. outward 'blocks' inward). " +
+        "WRITE on Jira.",
       inputSchema: {
-        outwardKey: z.string().describe("Issue de origem (ex: a que 'blocks')."),
-        inwardKey: z.string().describe("Issue de destino (ex: a que 'is blocked by')."),
-        type: z.string().describe("Nome ou id do tipo de link, ex: 'Blocks'."),
-        comment: z.string().optional().describe("Comentário opcional no vínculo."),
+        outwardKey: z.string().describe("Source issue (e.g. the one that 'blocks')."),
+        inwardKey: z.string().describe("Target issue (e.g. the one that 'is blocked by')."),
+        type: z.string().describe("Link type name or id, e.g. 'Blocks'."),
+        comment: z.string().optional().describe("Optional comment on the link."),
       },
     },
     async ({ outwardKey, inwardKey, type, comment }) => {
@@ -54,7 +54,7 @@ export function registerLinks(server: McpServer, client: JiraClient): void {
       if (comment) body.comment = { body: toAdf(comment) };
       await client.raw("POST", "/rest/api/3/issueLink", body);
       return textResult(
-        `OK — vínculo criado: ${outwardKey} —[${type}]→ ${inwardKey}.`,
+        `OK — link created: ${outwardKey} —[${type}]→ ${inwardKey}.`,
       );
     },
   );
@@ -62,23 +62,23 @@ export function registerLinks(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "delete_link",
     {
-      title: "Deletar vínculo entre issues (DESTRUTIVA)",
+      title: "Delete issue link (DESTRUCTIVE)",
       description:
-        "Deleta um vínculo pelo seu id. Exige `confirm: true` — sem isso, dry-run. " +
-        "O linkId aparece em get_issue com fields=['issuelinks'].",
+        "Deletes a link by its id. Requires `confirm: true` — without it, dry-run. " +
+        "The linkId appears in get_issue with fields=['issuelinks'].",
       inputSchema: {
-        linkId: z.string().describe("Id do vínculo."),
+        linkId: z.string().describe("Link id."),
         confirm: z.boolean().optional(),
       },
     },
     async ({ linkId, confirm }) => {
-      const guard = confirmGuard(confirm, `deletar o vínculo ${linkId}`, { linkId });
+      const guard = confirmGuard(confirm, `delete link ${linkId}`, { linkId });
       if (guard) return guard;
       await client.raw(
         "DELETE",
         `/rest/api/3/issueLink/${encodeURIComponent(linkId)}`,
       );
-      return textResult(`OK — vínculo ${linkId} deletado.`);
+      return textResult(`OK — link ${linkId} deleted.`);
     },
   );
 }

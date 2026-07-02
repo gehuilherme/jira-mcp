@@ -7,16 +7,16 @@ export function registerAssign(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "assign_issue",
     {
-      title: "Trocar responsável da issue (ESCRITA)",
+      title: "Change issue assignee (WRITE)",
       description:
-        "Define ou remove o responsável de uma issue. Passe um e-mail ou accountId " +
-        "para atribuir; passe vazio/omita `assignee` para DESATRIBUIR. ESCRITA no Jira.",
+        "Sets or removes the assignee of an issue. Pass an email or accountId " +
+        "to assign; pass empty/omit `assignee` to UNASSIGN. WRITE on Jira.",
       inputSchema: {
-        key: z.string().describe("Chave da issue, ex: PROJ-123"),
+        key: z.string().describe("Issue key, e.g. PROJ-123"),
         assignee: z
           .string()
           .optional()
-          .describe("E-mail ou accountId do novo responsável. Vazio/omitido = desatribuir."),
+          .describe("Email or accountId of the new assignee. Empty/omitted = unassign."),
       },
     },
     async ({ key, assignee }) => {
@@ -29,8 +29,8 @@ export function registerAssign(server: McpServer, client: JiraClient): void {
       );
       return textResult(
         accountId
-          ? `OK — ${key} atribuído a accountId ${accountId}.`
-          : `OK — ${key} ficou SEM responsável.`,
+          ? `OK — ${key} assigned to accountId ${accountId}.`
+          : `OK — ${key} is now UNASSIGNED.`,
       );
     },
   );

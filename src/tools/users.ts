@@ -7,13 +7,13 @@ export function registerUsers(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "search_users",
     {
-      title: "Buscar usuários do Jira",
+      title: "Search Jira users",
       description:
-        "Resolve nome ou e-mail para usuários do Jira, retornando displayName, " +
-        "accountId, e-mail e se está ativo. Útil para descobrir o accountId antes " +
-        "de reatribuir uma issue.",
+        "Resolves a name or email to Jira users, returning displayName, " +
+        "accountId, email and whether they are active. Useful for finding the accountId before " +
+        "reassigning an issue.",
       inputSchema: {
-        query: z.string().describe("Parte do nome ou e-mail do usuário a procurar."),
+        query: z.string().describe("Part of the name or email of the user to search for."),
         maxResults: z.number().int().min(1).max(50).default(20),
       },
     },
@@ -24,10 +24,10 @@ export function registerUsers(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "get_current_user",
     {
-      title: "Quem sou eu (usuário autenticado)",
+      title: "Who am I (authenticated user)",
       description:
-        "Retorna o usuário autenticado (accountId, displayName, e-mail). Útil " +
-        "para 'atribuir a mim' ou validar as credenciais configuradas.",
+        "Returns the authenticated user (accountId, displayName, email). Useful " +
+        "for 'assign to me' or validating the configured credentials.",
       inputSchema: {},
     },
     async () =>

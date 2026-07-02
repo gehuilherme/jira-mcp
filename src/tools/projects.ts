@@ -16,12 +16,12 @@ export function registerProjects(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "list_projects",
     {
-      title: "Listar projetos",
+      title: "List projects",
       description:
-        "Lista/busca projetos visíveis (id, key, nome, tipo). `query` filtra por " +
-        "nome ou key. Paginado.",
+        "Lists/searches visible projects (id, key, name, type). `query` filters by " +
+        "name or key. Paginated.",
       inputSchema: {
-        query: z.string().optional().describe("Filtra por nome ou key do projeto."),
+        query: z.string().optional().describe("Filters by project name or key."),
         maxResults: z.number().int().min(1).max(100).default(50),
       },
     },
@@ -53,12 +53,12 @@ export function registerProjects(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "get_project",
     {
-      title: "Detalhar projeto",
+      title: "Project details",
       description:
-        "Retorna detalhes de um projeto incluindo os tipos de issue disponíveis. " +
-        "Útil para descobrir issueType válido antes de create_issue.",
+        "Returns details of a project including the available issue types. " +
+        "Useful for discovering a valid issueType before create_issue.",
       inputSchema: {
-        projectKey: z.string().optional().describe("Projeto (default: JIRA_PROJECT_KEY)."),
+        projectKey: z.string().optional().describe("Project (default: JIRA_PROJECT_KEY)."),
       },
     },
     async ({ projectKey }) => {

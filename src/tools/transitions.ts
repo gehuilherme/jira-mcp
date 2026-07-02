@@ -11,12 +11,12 @@ export function registerTransitions(
   server.registerTool(
     "list_transitions",
     {
-      title: "Listar transições de status",
+      title: "List status transitions",
       description:
-        "Lista as transições de workflow disponíveis para uma issue (id, nome e " +
-        "status de destino). Use antes de mover o status.",
+        "Lists the workflow transitions available for an issue (id, name and " +
+        "target status). Use before moving the status.",
       inputSchema: {
-        key: z.string().describe("Chave da issue, ex: PROJ-123"),
+        key: z.string().describe("Issue key, e.g. PROJ-123"),
       },
     },
     async ({ key }) => jsonResult(await client.getTransitions(key)),
@@ -25,20 +25,20 @@ export function registerTransitions(
   server.registerTool(
     "transition_issue",
     {
-      title: "Mover status da issue (ESCRITA)",
+      title: "Move issue status (WRITE)",
       description:
-        "Move a issue para outro status executando uma transição de workflow. " +
-        "Aceita o id OU o nome da transição (case-insensitive). Pode incluir um " +
-        "comentário. ESCRITA no Jira.",
+        "Moves the issue to another status by executing a workflow transition. " +
+        "Accepts the id OR the transition name (case-insensitive). Can include a " +
+        "comment. WRITE on Jira.",
       inputSchema: {
-        key: z.string().describe("Chave da issue, ex: PROJ-123"),
+        key: z.string().describe("Issue key, e.g. PROJ-123"),
         transition: z
           .string()
-          .describe("Id da transição (ex: '21') ou nome (ex: 'In Progress')"),
+          .describe("Transition id (e.g. '21') or name (e.g. 'In Progress')"),
         comment: z
           .string()
           .optional()
-          .describe("Comentário opcional adicionado junto da transição."),
+          .describe("Optional comment added along with the transition."),
       },
     },
     async ({ key, transition, comment }) => {
@@ -50,8 +50,8 @@ export function registerTransitions(
 
       if (!match) {
         return errorResult(
-          `Transição "${transition}" não é válida para ${key}. ` +
-            `Disponíveis: ${available
+          `Transition "${transition}" is not valid for ${key}. ` +
+            `Available: ${available
               .map((t) => `${t.name} (id ${t.id} → ${t.to})`)
               .join("; ")}`,
         );
@@ -67,7 +67,7 @@ export function registerTransitions(
         body,
       );
       return textResult(
-        `OK — ${key} movido via "${match.name}" (id ${match.id}) para status "${match.to}".`,
+        `OK — ${key} moved via "${match.name}" (id ${match.id}) to status "${match.to}".`,
       );
     },
   );

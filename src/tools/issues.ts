@@ -19,12 +19,12 @@ const DETAIL_FIELDS = [
   "comment",
 ];
 
-/** Monta `{id}` ou `{name}` a partir de uma string (numérica = id). */
+/** Builds `{id}` or `{name}` from a string (numeric = id). */
 function idOrName(value: string): { id: string } | { name: string } {
   return /^\d+$/.test(value.trim()) ? { id: value.trim() } : { name: value.trim() };
 }
 
-/** Constrói o objeto `fields` da API a partir dos params padrão + custom. */
+/** Builds the API `fields` object from the standard params + custom fields. */
 async function buildFields(
   client: JiraClient,
   input: {
@@ -57,21 +57,21 @@ export function registerIssues(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "get_issue",
     {
-      title: "Detalhar uma issue",
+      title: "Detail an issue",
       description:
-        "Retorna os detalhes de uma issue: resumo, status, responsável, relator, " +
-        "prioridade, tipo, labels, descrição, comentários recentes e transições " +
-        "disponíveis. Passe `fields` para escolher campos específicos (inclui custom).",
+        "Returns the details of an issue: summary, status, assignee, reporter, " +
+        "priority, type, labels, description, recent comments and available " +
+        "transitions. Pass `fields` to choose specific fields (includes custom).",
       inputSchema: {
-        key: z.string().describe("Chave da issue, ex: PROJ-123"),
+        key: z.string().describe("Issue key, e.g. PROJ-123"),
         fields: z
           .array(z.string())
           .optional()
-          .describe("Campos específicos (nome ou id). Se omitido, usa o conjunto padrão."),
+          .describe("Specific fields (name or id). If omitted, uses the default set."),
         expand: z
           .array(z.string())
           .optional()
-          .describe("Expansões, ex: ['renderedFields','changelog']."),
+          .describe("Expansions, e.g. ['renderedFields','changelog']."),
       },
     },
     async ({ key, fields, expand }) => {
@@ -106,7 +106,7 @@ export function registerIssues(server: McpServer, client: JiraClient): void {
         })),
         availableTransitions: transitions,
       };
-      // Campos extras (custom) pedidos explicitamente aparecem crus.
+      // Extra (custom) fields requested explicitly appear raw.
       if (fields?.length) {
         const extras: Record<string, unknown> = {};
         for (const key of fields)
@@ -120,30 +120,30 @@ export function registerIssues(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "create_issue",
     {
-      title: "Criar issue (ESCRITA)",
+      title: "Create issue (WRITE)",
       description:
-        "Cria uma issue no projeto. `issueType` aceita nome (ex: 'Task') ou id. " +
-        "`description` é texto puro (vira ADF). `customFields` mapeia por nome OU " +
-        "id (use list_fields/get_create_meta para descobrir). ESCRITA no Jira.",
+        "Creates an issue in the project. `issueType` accepts a name (e.g. 'Task') or id. " +
+        "`description` is plain text (becomes ADF). `customFields` maps by name OR " +
+        "id (use list_fields/get_create_meta to discover). WRITE in Jira.",
       inputSchema: {
         projectKey: z
           .string()
           .optional()
-          .describe("Projeto (default: JIRA_PROJECT_KEY)."),
-        issueType: z.string().describe("Tipo da issue: nome (ex: 'Task') ou id."),
-        summary: z.string().min(1).describe("Título da issue."),
-        description: z.string().optional().describe("Descrição em texto puro."),
-        assignee: z.string().optional().describe("E-mail ou accountId do responsável."),
-        priority: z.string().optional().describe("Nome da prioridade, ex: 'High'."),
+          .describe("Project (default: JIRA_PROJECT_KEY)."),
+        issueType: z.string().describe("Issue type: name (e.g. 'Task') or id."),
+        summary: z.string().min(1).describe("Issue summary."),
+        description: z.string().optional().describe("Description in plain text."),
+        assignee: z.string().optional().describe("Email or accountId of the assignee."),
+        priority: z.string().optional().describe("Priority name, e.g. 'High'."),
         labels: z.array(z.string()).optional(),
         parent: z
           .string()
           .optional()
-          .describe("Chave do pai (para subtask ou issue de epic)."),
+          .describe("Parent key (for a subtask or an epic's issue)."),
         customFields: z
           .record(z.string(), z.unknown())
           .optional()
-          .describe("Campos customizados por nome ou id."),
+          .describe("Custom fields by name or id."),
       },
     },
     async ({ projectKey, issueType, summary, description, assignee, priority, labels, parent, customFields }) => {
@@ -163,25 +163,25 @@ export function registerIssues(server: McpServer, client: JiraClient): void {
         "/rest/api/3/issue",
         { fields },
       );
-      return textResult(`OK — issue criada: ${res.key} (id ${res.id}).`);
+      return textResult(`OK — issue created: ${res.key} (id ${res.id}).`);
     },
   );
 
   server.registerTool(
     "create_subtask",
     {
-      title: "Criar subtask (ESCRITA)",
+      title: "Create subtask (WRITE)",
       description:
-        "Atalho para criar uma subtask vinculada a uma issue pai. `issueType` " +
-        "default 'Sub-task' (ajuste se seu projeto usa outro nome). ESCRITA no Jira.",
+        "Shortcut to create a subtask linked to a parent issue. `issueType` " +
+        "defaults to 'Sub-task' (adjust if your project uses another name). WRITE in Jira.",
       inputSchema: {
-        parentKey: z.string().describe("Chave da issue pai, ex: PROJ-123."),
+        parentKey: z.string().describe("Parent issue key, e.g. PROJ-123."),
         summary: z.string().min(1),
         description: z.string().optional(),
         issueType: z
           .string()
           .optional()
-          .describe("Tipo de subtask. Se omitido, detecta o tipo subtask do projeto."),
+          .describe("Subtask type. If omitted, detects the project's subtask type."),
         projectKey: z.string().optional(),
       },
     },
@@ -199,7 +199,7 @@ export function registerIssues(server: McpServer, client: JiraClient): void {
         const st = types.find((t) => t.subtask);
         if (!st) {
           throw new Error(
-            `Projeto ${pk} não tem tipo de subtask. Informe \`issueType\` explicitamente.`,
+            `Project ${pk} has no subtask type. Provide \`issueType\` explicitly.`,
           );
         }
         typeRef = { id: st.id };
@@ -216,26 +216,26 @@ export function registerIssues(server: McpServer, client: JiraClient): void {
         "/rest/api/3/issue",
         { fields },
       );
-      return textResult(`OK — subtask criada: ${res.key} (pai ${parentKey}).`);
+      return textResult(`OK — subtask created: ${res.key} (parent ${parentKey}).`);
     },
   );
 
   server.registerTool(
     "edit_issue",
     {
-      title: "Editar issue (ESCRITA)",
+      title: "Edit issue (WRITE)",
       description:
-        "Atualiza campos de uma issue. Só envia os campos informados. " +
-        "`customFields` por nome ou id. ESCRITA no Jira.",
+        "Updates fields of an issue. Only sends the provided fields. " +
+        "`customFields` by name or id. WRITE in Jira.",
       inputSchema: {
-        key: z.string().describe("Chave da issue, ex: PROJ-123."),
+        key: z.string().describe("Issue key, e.g. PROJ-123."),
         summary: z.string().optional(),
         description: z.string().optional(),
-        assignee: z.string().optional().describe("E-mail/accountId; string vazia desatribui."),
+        assignee: z.string().optional().describe("Email/accountId; empty string unassigns."),
         priority: z.string().optional(),
-        labels: z.array(z.string()).optional().describe("SUBSTITUI todas as labels."),
+        labels: z.array(z.string()).optional().describe("REPLACES all labels."),
         customFields: z.record(z.string(), z.unknown()).optional(),
-        notifyUsers: z.boolean().default(true).describe("Notificar watchers da mudança."),
+        notifyUsers: z.boolean().default(true).describe("Notify watchers of the change."),
       },
     },
     async ({ key, summary, description, assignee, priority, labels, customFields, notifyUsers }) => {
@@ -248,7 +248,7 @@ export function registerIssues(server: McpServer, client: JiraClient): void {
         customFields,
       });
       if (!Object.keys(fields).length) {
-        return textResult("Nada para atualizar — nenhum campo informado.");
+        return textResult("Nothing to update — no fields provided.");
       }
       await client.raw(
         "PUT",
@@ -256,7 +256,7 @@ export function registerIssues(server: McpServer, client: JiraClient): void {
         { fields },
       );
       return textResult(
-        `OK — ${key} atualizado (${Object.keys(fields).join(", ")}).`,
+        `OK — ${key} updated (${Object.keys(fields).join(", ")}).`,
       );
     },
   );
@@ -264,18 +264,18 @@ export function registerIssues(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "delete_issue",
     {
-      title: "Deletar issue (DESTRUTIVA)",
+      title: "Delete issue (DESTRUCTIVE)",
       description:
-        "Deleta uma issue permanentemente. Exige `confirm: true` — sem isso, " +
-        "retorna um dry-run. DESTRUTIVA e irreversível.",
+        "Deletes an issue permanently. Requires `confirm: true` — without it, " +
+        "returns a dry-run. DESTRUCTIVE and irreversible.",
       inputSchema: {
-        key: z.string().describe("Chave da issue, ex: PROJ-123."),
-        deleteSubtasks: z.boolean().default(false).describe("Deletar subtasks junto."),
-        confirm: z.boolean().optional().describe("Passe true para executar."),
+        key: z.string().describe("Issue key, e.g. PROJ-123."),
+        deleteSubtasks: z.boolean().default(false).describe("Delete subtasks too."),
+        confirm: z.boolean().optional().describe("Pass true to execute."),
       },
     },
     async ({ key, deleteSubtasks, confirm }) => {
-      const guard = confirmGuard(confirm, `deletar a issue ${key}`, {
+      const guard = confirmGuard(confirm, `delete issue ${key}`, {
         key,
         deleteSubtasks,
       });
@@ -284,7 +284,7 @@ export function registerIssues(server: McpServer, client: JiraClient): void {
         "DELETE",
         `/rest/api/3/issue/${encodeURIComponent(key)}?deleteSubtasks=${deleteSubtasks}`,
       );
-      return textResult(`OK — issue ${key} deletada.`);
+      return textResult(`OK — issue ${key} deleted.`);
     },
   );
 }

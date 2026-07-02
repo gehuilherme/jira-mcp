@@ -12,7 +12,7 @@ type GroupBy =
   | "issuetype"
   | "component";
 
-/** Mapeia o critério de agrupamento para o campo da API e o extrator de chaves. */
+/** Maps the grouping criterion to the API field and the key extractor. */
 const GROUPERS: Record<
   GroupBy,
   { field: string; keys: (i: RawIssue) => string[] }
@@ -20,7 +20,7 @@ const GROUPERS: Record<
   status: { field: "status", keys: (i) => [i.fields?.status?.name ?? "—"] },
   assignee: {
     field: "assignee",
-    keys: (i) => [i.fields?.assignee?.displayName ?? "Sem responsável"],
+    keys: (i) => [i.fields?.assignee?.displayName ?? "No assignee"],
   },
   priority: {
     field: "priority",
@@ -34,14 +34,14 @@ const GROUPERS: Record<
     field: "labels",
     keys: (i) => {
       const l = (i.fields?.labels as string[]) ?? [];
-      return l.length ? l : ["(sem label)"];
+      return l.length ? l : ["(no label)"];
     },
   },
   component: {
     field: "components",
     keys: (i) => {
       const c = (i.fields?.components as { name?: string }[]) ?? [];
-      return c.length ? c.map((x) => x.name ?? "—") : ["(sem componente)"];
+      return c.length ? c.map((x) => x.name ?? "—") : ["(no component)"];
     },
   },
 };
@@ -50,13 +50,13 @@ export function registerReports(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "count_issues",
     {
-      title: "Contar issues (JQL)",
+      title: "Count issues (JQL)",
       description:
-        "Conta issues que batem com um JQL. Por padrão usa a contagem aproximada " +
-        "do Jira (rápida). `exact: true` varre as páginas para contar exato.",
+        "Counts issues matching a JQL. By default uses Jira's approximate count " +
+        "(fast). `exact: true` scans the pages to count exactly.",
       inputSchema: {
-        jql: z.string().describe("Consulta JQL."),
-        exact: z.boolean().default(false).describe("Contagem exata (mais lenta)."),
+        jql: z.string().describe("JQL query."),
+        exact: z.boolean().default(false).describe("Exact count (slower)."),
       },
     },
     async ({ jql, exact }) => {
@@ -76,16 +76,16 @@ export function registerReports(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "group_issues",
     {
-      title: "Agrupar/contar issues por campo",
+      title: "Group/count issues by field",
       description:
-        "Agrupa e conta issues por status, responsável, prioridade, tipo, label ou " +
-        "componente. Informe `jql` OU `projectKey`. Varre até `maxIssues` issues.",
+        "Groups and counts issues by status, assignee, priority, type, label or " +
+        "component. Provide `jql` OR `projectKey`. Scans up to `maxIssues` issues.",
       inputSchema: {
         groupBy: z
           .enum(["status", "assignee", "priority", "label", "issuetype", "component"])
-          .describe("Critério de agrupamento."),
-        jql: z.string().optional().describe("JQL base (tem prioridade sobre projectKey)."),
-        projectKey: z.string().optional().describe("Projeto (se `jql` for omitido)."),
+          .describe("Grouping criterion."),
+        jql: z.string().optional().describe("Base JQL (takes priority over projectKey)."),
+        projectKey: z.string().optional().describe("Project (if `jql` is omitted)."),
         maxIssues: z.number().int().min(1).max(5000).default(1000),
       },
     },
@@ -112,18 +112,18 @@ export function registerReports(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "stale_issues",
     {
-      title: "Issues paradas há N dias",
+      title: "Issues stale for N days",
       description:
-        "Lista issues não atualizadas há pelo menos N dias (mais antigas primeiro). " +
-        "Filtra opcionalmente por projeto, status e responsável.",
+        "Lists issues not updated for at least N days (oldest first). " +
+        "Optionally filters by project, status and assignee.",
       inputSchema: {
-        days: z.number().int().min(1).describe("Nº de dias sem atualização."),
+        days: z.number().int().min(1).describe("Number of days without update."),
         projectKey: z.string().optional(),
-        status: z.string().optional().describe("Filtra por status exato."),
+        status: z.string().optional().describe("Filters by exact status."),
         assignee: z
           .string()
           .optional()
-          .describe("E-mail/accountId; use 'EMPTY' para sem responsável."),
+          .describe("Email/accountId; use 'EMPTY' for no assignee."),
         maxResults: z.number().int().min(1).max(100).default(50),
       },
     },

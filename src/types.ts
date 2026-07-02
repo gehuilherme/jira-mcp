@@ -1,16 +1,16 @@
 /**
- * Tipos de domínio (normalizados) e tipos "brutos" (parciais) da Jira Cloud
- * REST API v3 / Agile 1.0. Ficam fora do client para que os módulos de tools
- * importem shapes sem depender da implementação do client.
+ * Domain types (normalized) and "raw" (partial) types from the Jira Cloud
+ * REST API v3 / Agile 1.0. Kept outside the client so that the tool modules
+ * can import shapes without depending on the client implementation.
  */
 
 export interface JiraConfig {
   baseUrl: string;
   email: string;
   apiToken: string;
-  /** Projeto default (opcional). "" = não configurado. */
+  /** Default project (optional). "" = not configured. */
   projectKey: string;
-  /** Responsáveis default para filtros de conveniência. */
+  /** Default assignees for convenience filters. */
   defaultAssignees: string[];
 }
 
@@ -52,7 +52,7 @@ export interface JiraField {
   schemaType: string | null;
 }
 
-// --- Tipos brutos da API (parciais) ---
+// --- Raw API types (partial) ---
 
 export interface RawIssue {
   id?: string;
@@ -102,14 +102,14 @@ export interface RawField {
   schema?: { type?: string };
 }
 
-/** Página do novo endpoint de busca JQL (nextPageToken / isLast). */
+/** Page from the new JQL search endpoint (nextPageToken / isLast). */
 export interface JqlSearchPage {
   issues?: RawIssue[];
   nextPageToken?: string;
   isLast?: boolean;
 }
 
-/** Página clássica (startAt / maxResults / total). */
+/** Classic page (startAt / maxResults / total). */
 export interface ClassicPage<T> {
   startAt?: number;
   maxResults?: number;

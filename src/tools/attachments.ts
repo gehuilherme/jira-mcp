@@ -20,10 +20,10 @@ export function registerAttachments(
   server.registerTool(
     "list_attachments",
     {
-      title: "Listar anexos da issue",
+      title: "List issue attachments",
       description:
-        "Lista os anexos de uma issue (id, nome, tamanho, tipo, autor, URL de download).",
-      inputSchema: { key: z.string().describe("Chave da issue, ex: PROJ-123.") },
+        "Lists an issue's attachments (id, name, size, type, author, download URL).",
+      inputSchema: { key: z.string().describe("Issue key, e.g. PROJ-123.") },
     },
     async ({ key }) => {
       const data = await client.raw<{
@@ -51,19 +51,19 @@ export function registerAttachments(
   server.registerTool(
     "add_attachment",
     {
-      title: "Anexar arquivo local (ESCRITA)",
+      title: "Attach local file (WRITE)",
       description:
-        "Faz upload de um arquivo do disco local para a issue. `filePath` deve ser " +
-        "um caminho absoluto. ESCRITA no Jira (lê o arquivo local).",
+        "Uploads a file from the local disk to the issue. `filePath` must be " +
+        "an absolute path. WRITE in Jira (reads the local file).",
       inputSchema: {
-        key: z.string().describe("Chave da issue."),
-        filePath: z.string().describe("Caminho absoluto do arquivo a anexar."),
+        key: z.string().describe("Issue key."),
+        filePath: z.string().describe("Absolute path of the file to attach."),
       },
     },
     async ({ key, filePath }) => {
       const res = await client.uploadAttachment(key, filePath);
       return textResult(
-        `OK — anexado em ${key}: ${res.map((a) => `${a.filename} (id ${a.id})`).join(", ")}.`,
+        `OK — attached to ${key}: ${res.map((a) => `${a.filename} (id ${a.id})`).join(", ")}.`,
       );
     },
   );
@@ -71,16 +71,16 @@ export function registerAttachments(
   server.registerTool(
     "delete_attachment",
     {
-      title: "Deletar anexo (DESTRUTIVA)",
+      title: "Delete attachment (DESTRUCTIVE)",
       description:
-        "Deleta um anexo pelo seu id (veja list_attachments). Exige `confirm: true`.",
+        "Deletes an attachment by its id (see list_attachments). Requires `confirm: true`.",
       inputSchema: {
-        attachmentId: z.string().describe("Id do anexo."),
+        attachmentId: z.string().describe("Attachment id."),
         confirm: z.boolean().optional(),
       },
     },
     async ({ attachmentId, confirm }) => {
-      const guard = confirmGuard(confirm, `deletar o anexo ${attachmentId}`, {
+      const guard = confirmGuard(confirm, `delete attachment ${attachmentId}`, {
         attachmentId,
       });
       if (guard) return guard;
@@ -88,7 +88,7 @@ export function registerAttachments(
         "DELETE",
         `/rest/api/3/attachment/${encodeURIComponent(attachmentId)}`,
       );
-      return textResult(`OK — anexo ${attachmentId} deletado.`);
+      return textResult(`OK — attachment ${attachmentId} deleted.`);
     },
   );
 }

@@ -10,14 +10,14 @@ export function registerLabelsComponents(
   server.registerTool(
     "edit_labels",
     {
-      title: "Adicionar/remover labels (ESCRITA)",
+      title: "Add/remove labels (WRITE)",
       description:
-        "Adiciona e/ou remove labels de uma issue sem sobrescrever as demais " +
-        "(usa os verbos add/remove do update). ESCRITA no Jira.",
+        "Adds and/or removes labels on an issue without overwriting the others " +
+        "(uses the update add/remove verbs). WRITE on Jira.",
       inputSchema: {
-        key: z.string().describe("Chave da issue, ex: PROJ-123."),
-        add: z.array(z.string()).optional().describe("Labels a adicionar."),
-        remove: z.array(z.string()).optional().describe("Labels a remover."),
+        key: z.string().describe("Issue key, e.g. PROJ-123."),
+        add: z.array(z.string()).optional().describe("Labels to add."),
+        remove: z.array(z.string()).optional().describe("Labels to remove."),
       },
     },
     async ({ key, add, remove }) => {
@@ -25,12 +25,12 @@ export function registerLabelsComponents(
         ...(add ?? []).map((l) => ({ add: l })),
         ...(remove ?? []).map((l) => ({ remove: l })),
       ];
-      if (!ops.length) return errorResult("Informe `add` e/ou `remove`.");
+      if (!ops.length) return errorResult("Provide `add` and/or `remove`.");
       await client.raw("PUT", `/rest/api/3/issue/${encodeURIComponent(key)}`, {
         update: { labels: ops },
       });
       return textResult(
-        `OK — labels de ${key} atualizadas (+${add?.length ?? 0} / -${remove?.length ?? 0}).`,
+        `OK — labels of ${key} updated (+${add?.length ?? 0} / -${remove?.length ?? 0}).`,
       );
     },
   );
@@ -38,10 +38,10 @@ export function registerLabelsComponents(
   server.registerTool(
     "list_components",
     {
-      title: "Listar componentes do projeto",
-      description: "Lista os componentes de um projeto (id + nome).",
+      title: "List project components",
+      description: "Lists a project's components (id + name).",
       inputSchema: {
-        projectKey: z.string().optional().describe("Projeto (default: JIRA_PROJECT_KEY)."),
+        projectKey: z.string().optional().describe("Project (default: JIRA_PROJECT_KEY)."),
       },
     },
     async ({ projectKey }) => {
@@ -60,15 +60,15 @@ export function registerLabelsComponents(
   server.registerTool(
     "set_components",
     {
-      title: "Definir componentes da issue (ESCRITA)",
+      title: "Set issue components (WRITE)",
       description:
-        "Substitui os componentes de uma issue. Aceita nome ou id (numérico = id). " +
-        "Lista vazia remove todos. ESCRITA no Jira.",
+        "Replaces an issue's components. Accepts name or id (numeric = id). " +
+        "Empty list removes all. WRITE on Jira.",
       inputSchema: {
-        key: z.string().describe("Chave da issue."),
+        key: z.string().describe("Issue key."),
         components: z
           .array(z.string())
-          .describe("Nomes ou ids dos componentes (vazio = remover todos)."),
+          .describe("Component names or ids (empty = remove all)."),
       },
     },
     async ({ key, components }) => {
@@ -78,7 +78,7 @@ export function registerLabelsComponents(
       await client.raw("PUT", `/rest/api/3/issue/${encodeURIComponent(key)}`, {
         fields: { components: value },
       });
-      return textResult(`OK — componentes de ${key} definidos (${components.length}).`);
+      return textResult(`OK — components of ${key} set (${components.length}).`);
     },
   );
 }

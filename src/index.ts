@@ -27,22 +27,22 @@ async function main(): Promise<void> {
     version: "2.0.0",
   });
 
-  // Issues, busca e relatórios
+  // Issues, search and reports
   registerIssues(server, client);
   registerSearch(server, client);
   registerReports(server, client);
-  // Workflow e pessoas
+  // Workflow and people
   registerTransitions(server, client);
   registerAssign(server, client);
   registerUsers(server, client);
   registerComments(server, client);
   registerWatchers(server, client);
-  // Metadados e organização
+  // Metadata and organization
   registerFields(server, client);
   registerProjects(server, client);
   registerLabelsComponents(server, client);
   registerLinks(server, client);
-  // Anexos e tempo
+  // Attachments and time
   registerAttachments(server, client);
   registerWorklogs(server, client);
   // Agile
@@ -52,11 +52,11 @@ async function main(): Promise<void> {
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  // stderr para não poluir o canal stdio do protocolo.
-  console.error("jira-mcp server pronto (stdio).");
+  // stderr so as not to pollute the protocol's stdio channel.
+  console.error("jira-mcp server ready (stdio).");
 }
 
 main().catch((err) => {
-  console.error("Falha ao iniciar o jira-mcp:", err);
+  console.error("Failed to start jira-mcp:", err);
   process.exit(1);
 });

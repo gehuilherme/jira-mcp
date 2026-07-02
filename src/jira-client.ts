@@ -1,14 +1,14 @@
 /**
- * Wrapper sobre a Jira Cloud REST API v3 + Agile 1.0 usando o `fetch` nativo do
- * Node. Sem dependências de terceiros — auth Basic com base64(email:api_token).
+ * Wrapper over the Jira Cloud REST API v3 + Agile 1.0 using Node's native
+ * `fetch`. No third-party dependencies — Basic auth with base64(email:api_token).
  *
- * Responsabilidades desta classe (infra reutilizável):
- *  - request/raw com retry de 429/5xx e erros normalizados (JiraError);
- *  - paginação (clássica startAt/total e a nova de JQL nextPageToken/isLast);
- *  - resolução de campos customizados por nome→id e de usuários por e-mail;
- *  - upload multipart de anexos.
- * A lógica específica de cada endpoint fica nos módulos de `tools/`, que chamam
- * `client.raw(...)` e os helpers de paginação daqui.
+ * Responsibilities of this class (reusable infra):
+ *  - request/raw with 429/5xx retry and normalized errors (JiraError);
+ *  - pagination (classic startAt/total and the new JQL nextPageToken/isLast);
+ *  - custom field resolution by name→id and user resolution by email;
+ *  - multipart attachment upload.
+ * The logic specific to each endpoint lives in the `tools/` modules, which call
+ * `client.raw(...)` and the pagination helpers from here.
  */
 import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
@@ -35,7 +35,7 @@ export type {
   JiraField,
 } from "./types.js";
 
-/** Erro normalizado de uma chamada à API do Jira. */
+/** Normalized error from a Jira API call. */
 export class JiraError extends Error {
   constructor(
     readonly status: number,
@@ -49,7 +49,7 @@ export class JiraError extends Error {
   }
 }
 
-/** Lê e valida a config a partir do ambiente. `JIRA_PROJECT_KEY` é OPCIONAL. */
+/** Reads and validates the config from the environment. `JIRA_PROJECT_KEY` is OPTIONAL. */
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): JiraConfig {
   const missing: string[] = [];
   const req = (name: string): string => {
@@ -63,8 +63,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): JiraConfig {
 
   if (missing.length) {
     throw new Error(
-      `Config do Jira incompleta — faltam variáveis de ambiente: ${missing.join(", ")}. ` +
-        `Veja .env.example.`,
+      `Jira config incomplete — missing environment variables: ${missing.join(", ")}. ` +
+        `See .env.example.`,
     );
   }
 
@@ -85,7 +85,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): JiraConfig {
 
 const RETRYABLE = new Set([429, 502, 503, 504]);
 const MAX_RETRIES = 3;
-const MAX_PAGES = 100; // guarda contra loops de paginação
+const MAX_PAGES = 100; // guard against pagination loops
 
 export class JiraClient {
   private fieldCache: JiraField[] | null = null;
@@ -100,12 +100,12 @@ export class JiraClient {
     return this.cfg.defaultAssignees;
   }
 
-  /** Retorna o projeto explícito ou o default; erro amigável se ambos vazios. */
+  /** Returns the explicit project or the default; friendly error if both empty. */
   resolveProjectKey(param?: string): string {
     const p = (param ?? "").trim() || this.cfg.projectKey;
     if (!p) {
       throw new Error(
-        "Projeto não informado: passe `projectKey` ou configure JIRA_PROJECT_KEY no ambiente.",
+        "Project not provided: pass `projectKey` or configure JIRA_PROJECT_KEY in the environment.",
       );
     }
     return p;
@@ -130,11 +130,11 @@ export class JiraClient {
       const when = Date.parse(ra);
       if (!Number.isNaN(when)) return Math.max(0, when - Date.now());
     }
-    // backoff exponencial com jitter: ~1s, 2s, 4s
+    // exponential backoff with jitter: ~1s, 2s, 4s
     return 1000 * 2 ** attempt + Math.floor(Math.random() * 250);
   }
 
-  /** Chamada JSON genérica com retry de 429/5xx e erro normalizado. */
+  /** Generic JSON call with 429/5xx retry and normalized error. */
   private async request<T>(
     method: string,
     path: string,
@@ -184,7 +184,7 @@ export class JiraClient {
         ...Object.entries(parsed.errors ?? {}).map(([k, v]) => `${k}: ${v}`),
       ];
     } catch {
-      /* corpo não-JSON */
+      /* non-JSON body */
     }
     const detail = jiraMessages.length
       ? jiraMessages.join("; ")
@@ -193,23 +193,23 @@ export class JiraClient {
       res.status,
       method,
       path,
-      `Jira ${method} ${path} falhou: ${res.status} ${res.statusText}${
+      `Jira ${method} ${path} failed: ${res.status} ${res.statusText}${
         detail ? ` — ${detail}` : ""
       }`,
       jiraMessages,
     );
   }
 
-  /** Escape hatch público: qualquer chamada REST à API do Jira. */
+  /** Public escape hatch: any REST call to the Jira API. */
   raw<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
     return this.request<T>(method, path, body);
   }
 
-  // --- Paginação -----------------------------------------------------------
+  // --- Pagination ----------------------------------------------------------
 
   /**
-   * Paginação clássica (startAt/maxResults/total ou isLast). `buildPath` recebe
-   * (startAt, maxResults) e `extract` puxa a lista de itens da página.
+   * Classic pagination (startAt/maxResults/total or isLast). `buildPath` receives
+   * (startAt, maxResults) and `extract` pulls the list of items from the page.
    */
   async paginateClassic<T>(
     buildPath: (startAt: number, maxResults: number) => string,
@@ -240,7 +240,7 @@ export class JiraClient {
     return maxItems === Infinity ? out : out.slice(0, maxItems);
   }
 
-  /** Uma página da busca JQL nova (`POST /rest/api/3/search/jql`). */
+  /** One page of the new JQL search (`POST /rest/api/3/search/jql`). */
   searchJqlPage(
     jql: string,
     fields: string[],
@@ -254,7 +254,7 @@ export class JiraClient {
     return this.request<JqlSearchPage>("POST", "/rest/api/3/search/jql", body);
   }
 
-  /** Varre TODAS as páginas da busca JQL (até maxItems). Usado por relatórios. */
+  /** Sweeps ALL pages of the JQL search (up to maxItems). Used by reports. */
   async paginateJqlSearch(
     jql: string,
     fields: string[],
@@ -273,7 +273,7 @@ export class JiraClient {
     return out.slice(0, maxItems);
   }
 
-  // --- Campos (resolução nome→id p/ custom fields) -------------------------
+  // --- Fields (name→id resolution for custom fields) -----------------------
 
   async listFields(refresh = false): Promise<JiraField[]> {
     if (this.fieldCache && !refresh) return this.fieldCache;
@@ -288,8 +288,8 @@ export class JiraClient {
   }
 
   /**
-   * Traduz um objeto de campos cujas chaves podem ser nomes OU ids para o
-   * formato `fields` da API (chaveado por id). Colisão de nome → erro.
+   * Translates a fields object whose keys may be names OR ids into the API's
+   * `fields` format (keyed by id). Name collision → error.
    */
   async resolveFields(
     input: Record<string, unknown>,
@@ -313,20 +313,20 @@ export class JiraClient {
         out[matches[0].id] = value;
       } else if (matches.length > 1) {
         throw new Error(
-          `O nome de campo "${key}" é ambíguo (ids: ${matches
+          `The field name "${key}" is ambiguous (ids: ${matches
             .map((m) => m.id)
-            .join(", ")}). Passe o id do campo.`,
+            .join(", ")}). Pass the field id.`,
         );
       } else {
         throw new Error(
-          `Campo "${key}" não encontrado. Use list_fields para descobrir nome/id.`,
+          `Field "${key}" not found. Use list_fields to discover name/id.`,
         );
       }
     }
     return out;
   }
 
-  // --- Usuários ------------------------------------------------------------
+  // --- Users ---------------------------------------------------------------
 
   async searchUsers(query: string, maxResults = 20): Promise<JiraUser[]> {
     const data = await this.request<RawUser[]>(
@@ -341,21 +341,21 @@ export class JiraClient {
     }));
   }
 
-  /** Resolve um identificador (accountId ou e-mail) para accountId. */
+  /** Resolves an identifier (accountId or email) to accountId. */
   async resolveAccountId(identifier: string): Promise<string> {
     const id = identifier.trim();
-    if (!id.includes("@")) return id; // já é accountId
+    if (!id.includes("@")) return id; // already an accountId
     const users = await this.searchUsers(id);
     const match =
       users.find((u) => (u.email ?? "").toLowerCase() === id.toLowerCase()) ??
       users[0];
     if (!match) {
-      throw new Error(`Nenhum usuário do Jira encontrado para "${identifier}".`);
+      throw new Error(`No Jira user found for "${identifier}".`);
     }
     return match.accountId;
   }
 
-  // --- Transições (usadas por múltiplas tools) -----------------------------
+  // --- Transitions (used by multiple tools) --------------------------------
 
   async getTransitions(key: string): Promise<JiraTransition[]> {
     const data = await this.request<{ transitions: RawTransition[] }>(
@@ -369,7 +369,7 @@ export class JiraClient {
     }));
   }
 
-  // --- Anexos (multipart, fora do request<T> JSON) -------------------------
+  // --- Attachments (multipart, outside the request<T> JSON) ----------------
 
   async uploadAttachment(
     key: string,

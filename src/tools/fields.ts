@@ -22,15 +22,15 @@ export function registerFields(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "list_fields",
     {
-      title: "Listar campos do Jira",
+      title: "List Jira fields",
       description:
-        "Lista todos os campos (id, nome, se é customizado e o tipo). Use para " +
-        "descobrir o id/nome de um campo customizado antes de create/edit_issue. " +
-        "`query` filtra por parte do nome.",
+        "Lists all fields (id, name, whether it is custom, and the type). Use to " +
+        "discover the id/name of a custom field before create/edit_issue. " +
+        "`query` filters by part of the name.",
       inputSchema: {
-        query: z.string().optional().describe("Filtra por parte do nome do campo."),
-        customOnly: z.boolean().default(false).describe("Só campos customizados."),
-        refresh: z.boolean().default(false).describe("Ignora o cache e recarrega."),
+        query: z.string().optional().describe("Filters by part of the field name."),
+        customOnly: z.boolean().default(false).describe("Custom fields only."),
+        refresh: z.boolean().default(false).describe("Ignore the cache and reload."),
       },
     },
     async ({ query, customOnly, refresh }) => {
@@ -47,17 +47,17 @@ export function registerFields(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "get_create_meta",
     {
-      title: "Metadados de criação (campos por tipo)",
+      title: "Create metadata (fields by type)",
       description:
-        "Descobre os tipos de issue de um projeto e, se `issueType` for informado, " +
-        "os campos disponíveis/obrigatórios para criar aquele tipo (inclui custom e " +
-        "valores permitidos). Base para montar `customFields` em create_issue.",
+        "Discovers a project's issue types and, if `issueType` is provided, " +
+        "the available/required fields to create that type (includes custom fields and " +
+        "allowed values). Basis for building `customFields` in create_issue.",
       inputSchema: {
-        projectKey: z.string().optional().describe("Projeto (default: JIRA_PROJECT_KEY)."),
+        projectKey: z.string().optional().describe("Project (default: JIRA_PROJECT_KEY)."),
         issueType: z
           .string()
           .optional()
-          .describe("Nome ou id do tipo. Se omitido, lista só os tipos disponíveis."),
+          .describe("Type name or id. If omitted, lists only the available types."),
       },
     },
     async ({ projectKey, issueType }) => {
@@ -85,7 +85,7 @@ export function registerFields(server: McpServer, client: JiraClient): void {
       );
       if (!type) {
         return jsonResult({
-          error: `Tipo "${issueType}" não encontrado no projeto ${pk}.`,
+          error: `Type "${issueType}" not found in project ${pk}.`,
           issueTypes: types.map((t) => t.name),
         });
       }
@@ -115,12 +115,12 @@ export function registerFields(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "get_edit_meta",
     {
-      title: "Metadados de edição (campos editáveis)",
+      title: "Edit metadata (editable fields)",
       description:
-        "Lista os campos que podem ser editados numa issue específica e suas opções. " +
-        "Útil antes de edit_issue quando há campos de tela/customizados.",
+        "Lists the fields that can be edited on a specific issue and their options. " +
+        "Useful before edit_issue when there are screen/custom fields.",
       inputSchema: {
-        key: z.string().describe("Chave da issue, ex: PROJ-123."),
+        key: z.string().describe("Issue key, e.g. PROJ-123."),
       },
     },
     async ({ key }) => {

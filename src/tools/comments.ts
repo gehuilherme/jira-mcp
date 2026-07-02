@@ -9,18 +9,18 @@ export function registerComments(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "list_comments",
     {
-      title: "Listar comentários",
+      title: "List comments",
       description:
-        "Lista os comentários de uma issue com paginação (startAt/maxResults) e " +
-        "ordenação opcional. Retorna id, autor, data e texto.",
+        "Lists the comments of an issue with pagination (startAt/maxResults) and " +
+        "optional ordering. Returns id, author, date and text.",
       inputSchema: {
-        key: z.string().describe("Chave da issue, ex: PROJ-123."),
+        key: z.string().describe("Issue key, e.g. PROJ-123."),
         startAt: z.number().int().min(0).default(0),
         maxResults: z.number().int().min(1).max(100).default(50),
         orderBy: z
           .enum(["created", "-created"])
           .optional()
-          .describe("created = mais antigos primeiro; -created = mais novos primeiro."),
+          .describe("created = oldest first; -created = newest first."),
       },
     },
     async ({ key, startAt, maxResults, orderBy }) => {
@@ -46,13 +46,13 @@ export function registerComments(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "add_comment",
     {
-      title: "Adicionar comentário (ESCRITA)",
+      title: "Add comment (WRITE)",
       description:
-        "Adiciona um comentário em texto na issue (quebras de linha viram " +
-        "parágrafos). ESCRITA no Jira.",
+        "Adds a text comment to the issue (line breaks become " +
+        "paragraphs). WRITE on Jira.",
       inputSchema: {
-        key: z.string().describe("Chave da issue, ex: PROJ-123."),
-        body: z.string().min(1).describe("Texto do comentário."),
+        key: z.string().describe("Issue key, e.g. PROJ-123."),
+        body: z.string().min(1).describe("Comment text."),
       },
     },
     async ({ key, body }) => {
@@ -62,7 +62,7 @@ export function registerComments(server: McpServer, client: JiraClient): void {
         { body: toAdf(body) },
       );
       return textResult(
-        `OK — comentário adicionado em ${key}${res?.id ? ` (id ${res.id})` : ""}.`,
+        `OK — comment added to ${key}${res?.id ? ` (id ${res.id})` : ""}.`,
       );
     },
   );
@@ -70,12 +70,12 @@ export function registerComments(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "edit_comment",
     {
-      title: "Editar comentário (ESCRITA)",
-      description: "Substitui o texto de um comentário existente. ESCRITA no Jira.",
+      title: "Edit comment (WRITE)",
+      description: "Replaces the text of an existing comment. WRITE on Jira.",
       inputSchema: {
-        key: z.string().describe("Chave da issue."),
-        commentId: z.string().describe("Id do comentário (veja list_comments)."),
-        body: z.string().min(1).describe("Novo texto."),
+        key: z.string().describe("Issue key."),
+        commentId: z.string().describe("Comment id (see list_comments)."),
+        body: z.string().min(1).describe("New text."),
       },
     },
     async ({ key, commentId, body }) => {
@@ -84,26 +84,26 @@ export function registerComments(server: McpServer, client: JiraClient): void {
         `/rest/api/3/issue/${encodeURIComponent(key)}/comment/${encodeURIComponent(commentId)}`,
         { body: toAdf(body) },
       );
-      return textResult(`OK — comentário ${commentId} de ${key} editado.`);
+      return textResult(`OK — comment ${commentId} of ${key} edited.`);
     },
   );
 
   server.registerTool(
     "delete_comment",
     {
-      title: "Deletar comentário (DESTRUTIVA)",
+      title: "Delete comment (DESTRUCTIVE)",
       description:
-        "Deleta um comentário. Exige `confirm: true` — sem isso, retorna dry-run.",
+        "Deletes a comment. Requires `confirm: true` — without it, returns dry-run.",
       inputSchema: {
-        key: z.string().describe("Chave da issue."),
-        commentId: z.string().describe("Id do comentário."),
+        key: z.string().describe("Issue key."),
+        commentId: z.string().describe("Comment id."),
         confirm: z.boolean().optional(),
       },
     },
     async ({ key, commentId, confirm }) => {
       const guard = confirmGuard(
         confirm,
-        `deletar o comentário ${commentId} de ${key}`,
+        `delete comment ${commentId} of ${key}`,
         { key, commentId },
       );
       if (guard) return guard;
@@ -111,7 +111,7 @@ export function registerComments(server: McpServer, client: JiraClient): void {
         "DELETE",
         `/rest/api/3/issue/${encodeURIComponent(key)}/comment/${encodeURIComponent(commentId)}`,
       );
-      return textResult(`OK — comentário ${commentId} de ${key} deletado.`);
+      return textResult(`OK — comment ${commentId} of ${key} deleted.`);
     },
   );
 }

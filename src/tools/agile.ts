@@ -26,13 +26,13 @@ export function registerAgile(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "list_boards",
     {
-      title: "Listar boards (Agile)",
+      title: "List boards (Agile)",
       description:
-        "Lista boards do Jira Agile (Scrum/Kanban). Filtra por projeto, tipo e nome.",
+        "Lists Jira Agile boards (Scrum/Kanban). Filters by project, type and name.",
       inputSchema: {
-        projectKeyOrId: z.string().optional().describe("Filtra por projeto."),
+        projectKeyOrId: z.string().optional().describe("Filter by project."),
         type: z.enum(["scrum", "kanban"]).optional(),
-        name: z.string().optional().describe("Filtra por parte do nome."),
+        name: z.string().optional().describe("Filter by part of the name."),
         maxResults: z.number().int().min(1).max(100).default(50),
       },
     },
@@ -66,11 +66,11 @@ export function registerAgile(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "list_sprints",
     {
-      title: "Listar sprints de um board",
+      title: "List sprints of a board",
       description:
-        "Lista as sprints de um board. `state` filtra por active/future/closed.",
+        "Lists a board's sprints. `state` filters by active/future/closed.",
       inputSchema: {
-        boardId: z.number().int().describe("Id do board (veja list_boards)."),
+        boardId: z.number().int().describe("Board id (see list_boards)."),
         state: z.enum(["active", "future", "closed"]).optional(),
         maxResults: z.number().int().min(1).max(100).default(50),
       },
@@ -105,12 +105,12 @@ export function registerAgile(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "sprint_issues",
     {
-      title: "Issues de uma sprint",
+      title: "Issues of a sprint",
       description:
-        "Lista as issues de uma sprint. `jql` filtra adicionalmente. Paginado.",
+        "Lists a sprint's issues. `jql` filters additionally. Paginated.",
       inputSchema: {
-        sprintId: z.number().int().describe("Id da sprint (veja list_sprints)."),
-        jql: z.string().optional().describe("Filtro JQL adicional."),
+        sprintId: z.number().int().describe("Sprint id (see list_sprints)."),
+        jql: z.string().optional().describe("Additional JQL filter."),
         maxResults: z.number().int().min(1).max(100).default(50),
       },
     },
@@ -140,19 +140,19 @@ export function registerAgile(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "move_issues_to_sprint",
     {
-      title: "Mover issues para uma sprint (ESCRITA)",
+      title: "Move issues to a sprint (WRITE)",
       description:
-        "Move uma ou mais issues para a sprint informada (máx 50 por chamada). " +
-        "ESCRITA no Jira.",
+        "Moves one or more issues to the given sprint (max 50 per call). " +
+        "WRITE in Jira.",
       inputSchema: {
-        sprintId: z.number().int().describe("Id da sprint destino."),
-        issues: z.array(z.string()).min(1).describe("Chaves das issues, ex: ['PROJ-1']."),
+        sprintId: z.number().int().describe("Destination sprint id."),
+        issues: z.array(z.string()).min(1).describe("Issue keys, e.g. ['PROJ-1']."),
       },
     },
     async ({ sprintId, issues }) => {
       await client.raw("POST", `${AGILE}/sprint/${sprintId}/issue`, { issues });
       return textResult(
-        `OK — ${issues.length} issue(s) movida(s) para a sprint ${sprintId}.`,
+        `OK — ${issues.length} issue(s) moved to sprint ${sprintId}.`,
       );
     },
   );
@@ -160,17 +160,17 @@ export function registerAgile(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "move_issues_to_backlog",
     {
-      title: "Mover issues para o backlog (ESCRITA)",
+      title: "Move issues to the backlog (WRITE)",
       description:
-        "Remove issues de sprints, movendo-as para o backlog (máx 50). ESCRITA no Jira.",
+        "Removes issues from sprints, moving them to the backlog (max 50). WRITE in Jira.",
       inputSchema: {
-        issues: z.array(z.string()).min(1).describe("Chaves das issues."),
+        issues: z.array(z.string()).min(1).describe("Issue keys."),
       },
     },
     async ({ issues }) => {
       await client.raw("POST", `${AGILE}/backlog/issue`, { issues });
       return textResult(
-        `OK — ${issues.length} issue(s) movida(s) para o backlog.`,
+        `OK — ${issues.length} issue(s) moved to the backlog.`,
       );
     },
   );
@@ -178,11 +178,11 @@ export function registerAgile(server: McpServer, client: JiraClient): void {
   server.registerTool(
     "create_sprint",
     {
-      title: "Criar sprint (ESCRITA)",
+      title: "Create sprint (WRITE)",
       description:
-        "Cria uma nova sprint num board Scrum. ESCRITA no Jira.",
+        "Creates a new sprint in a Scrum board. WRITE in Jira.",
       inputSchema: {
-        boardId: z.number().int().describe("Id do board Scrum."),
+        boardId: z.number().int().describe("Scrum board id."),
         name: z.string().min(1),
         startDate: z.string().optional().describe("ISO 8601, ex: 2026-07-01T09:00:00.000Z."),
         endDate: z.string().optional().describe("ISO 8601."),
@@ -195,7 +195,7 @@ export function registerAgile(server: McpServer, client: JiraClient): void {
       if (endDate) body.endDate = endDate;
       if (goal) body.goal = goal;
       const res = await client.raw<{ id: number }>("POST", `${AGILE}/sprint`, body);
-      return textResult(`OK — sprint "${name}" criada (id ${res.id}).`);
+      return textResult(`OK — sprint "${name}" created (id ${res.id}).`);
     },
   );
 }
