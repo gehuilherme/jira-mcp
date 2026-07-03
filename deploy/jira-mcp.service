@@ -1,0 +1,32 @@
+[Unit]
+Description=jira-mcp HTTP server (multi-user, per-request Jira credentials)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Dedicated unprivileged user (create with: adduser --system --group jira-mcp)
+User=jira-mcp
+Group=jira-mcp
+WorkingDirectory=/opt/jira-mcp
+# Adjust the node path if you use nvm / a versioned install.
+ExecStart=/usr/bin/node /opt/jira-mcp/dist/index.js
+Environment=MCP_TRANSPORT=http
+# Bind to the internal interface the company proxy reaches. Use 127.0.0.1 if
+# the proxy runs on THIS host; otherwise the internal IP. Never 0.0.0.0 without
+# a firewall restricting the port to the proxy's IP.
+Environment=HTTP_HOST=127.0.0.1
+Environment=HTTP_PORT=3000
+Restart=on-failure
+RestartSec=3
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

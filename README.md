@@ -66,6 +66,72 @@ In the root `.mcp.json` (key `jira` → tools appear as `mcp__jira__*`):
 
 Restart Claude Code and run `/mcp` to confirm that `jira` connected.
 
+## Transports
+
+The server supports two transports, selected by `MCP_TRANSPORT` (or `--http`):
+
+- **`stdio`** (default) — local, single user. One process reads one set of
+  credentials from the environment. This is everything described above.
+- **`http`** — multi-user server. Exposes MCP at `POST /mcp` and is **stateless**:
+  each request carries the *caller's own* Jira credentials in headers, so every
+  user acts as themselves. The `JIRA_*` env vars are ignored in this mode.
+
+Header names (per request): `X-Jira-Base-Url`, `X-Jira-Email`, `X-Jira-Token`
+(required) plus optional `X-Jira-Project-Key`, `X-Jira-Default-Assignees`.
+
+## Deploying on Debian (multi-user, HTTP)
+
+Each user connects with their own Jira token; the server stores no secrets.
+
+1. **Host the code** at `/opt/jira-mcp`, then build:
+   ```bash
+   cd /opt/jira-mcp && npm ci && npm run build
+   ```
+2. **Run as a service** — copy [`deploy/jira-mcp.service`](deploy/jira-mcp.service)
+   to `/etc/systemd/system/`, create the user, enable it:
+   ```bash
+   adduser --system --group jira-mcp
+   systemctl daemon-reload && systemctl enable --now jira-mcp
+   curl -s http://127.0.0.1:3000/healthz   # -> ok
+   ```
+   Config lives in the unit's `Environment=` lines (`HTTP_HOST`, `HTTP_PORT`).
+3. **Front it with the company proxy** — the proxy terminates TLS and provides
+   external access; the Debian box speaks **plain HTTP**. Point the proxy at
+   `http://<debian>:3000` and route e.g. `https://jira-mcp.company.com/mcp`.
+
+### Security assumptions (important)
+
+This runs HTTP without local TLS **on purpose** — TLS is the proxy's job. That
+is only safe under these conditions:
+
+- **The proxy → Debian hop is plaintext.** The Jira token travels unciphered on
+  that segment, so it must be a *trusted internal network*.
+- **Firewall the port to the proxy only** (`ufw allow from <proxy-ip> to any port 3000`),
+  or bind `HTTP_HOST=127.0.0.1` if the proxy runs on the same host. Do **not**
+  leave the port open to the rest of the LAN.
+- **Credentials are never logged** — the server logs only method/path/status.
+- If the internal network ever stops being trustworthy, add TLS/mTLS on this hop.
+
+### User configuration (remote)
+
+Each user points Claude Code at the proxy URL with **their own** token:
+
+```jsonc
+{
+  "mcpServers": {
+    "jira": {
+      "type": "http",
+      "url": "https://jira-mcp.company.com/mcp",
+      "headers": {
+        "X-Jira-Base-Url": "https://yourcompany.atlassian.net",
+        "X-Jira-Email": "you@company.com",
+        "X-Jira-Token": "your-personal-token"
+      }
+    }
+  }
+}
+```
+
 ## Notes
 
 - **Security:** `.env` and `.mcp.json` containing secrets must NOT be committed. If a token leaks, **rotate it** in the Atlassian panel.

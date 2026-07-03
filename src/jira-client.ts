@@ -49,6 +49,70 @@ export class JiraError extends Error {
   }
 }
 
+/**
+ * Thrown when an HTTP request does not carry the required Jira credential
+ * headers. The HTTP transport maps this to a 401 (never echoes the values).
+ */
+export class MissingCredentialsError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "MissingCredentialsError";
+  }
+}
+
+/** Header names carrying per-request Jira credentials (HTTP transport). */
+export const CREDENTIAL_HEADERS = {
+  baseUrl: "x-jira-base-url",
+  email: "x-jira-email",
+  token: "x-jira-token",
+  projectKey: "x-jira-project-key",
+  assignees: "x-jira-default-assignees",
+} as const;
+
+/**
+ * Builds a per-request JiraConfig from HTTP headers. Node lowercases header
+ * names, so the keys above are lowercase. `baseUrl`, `email` and `token` are
+ * required; the rest mirror the optional env vars.
+ */
+export function configFromHeaders(
+  headers: Record<string, string | string[] | undefined>,
+): JiraConfig {
+  const get = (name: string): string => {
+    const v = headers[name];
+    return (Array.isArray(v) ? (v[0] ?? "") : (v ?? "")).trim();
+  };
+  const missing: string[] = [];
+  const req = (name: string, label: string): string => {
+    const v = get(name);
+    if (!v) missing.push(label);
+    return v;
+  };
+
+  const baseUrl = req(CREDENTIAL_HEADERS.baseUrl, "X-Jira-Base-Url");
+  const email = req(CREDENTIAL_HEADERS.email, "X-Jira-Email");
+  const apiToken = req(CREDENTIAL_HEADERS.token, "X-Jira-Token");
+
+  if (missing.length) {
+    throw new MissingCredentialsError(
+      `Missing required Jira credential header(s): ${missing.join(", ")}.`,
+    );
+  }
+
+  const projectKey = get(CREDENTIAL_HEADERS.projectKey);
+  const defaultAssignees = get(CREDENTIAL_HEADERS.assignees)
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  return {
+    baseUrl: baseUrl.replace(/\/+$/, ""),
+    email,
+    apiToken,
+    projectKey,
+    defaultAssignees,
+  };
+}
+
 /** Reads and validates the config from the environment. `JIRA_PROJECT_KEY` is OPTIONAL. */
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): JiraConfig {
   const missing: string[] = [];
